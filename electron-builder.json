@@ -1,0 +1,37 @@
+{
+  "appId": "com.electron.app",
+  "productName": "electronApp",
+  "copyright": "Copyright © 2025 electronApp",
+  "directories": {
+    "output": "release"
+  },
+  "artifactName": "${productName}-${version}-setup.${ext}",
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "win": {
+    "icon": "static/logo.png",
+    "target": "nsis",
+    "signAndEditExecutable": true,
+    "forceCodeSigning": false
+  },
+  "forceCodeSigning": false,
+  "mac": {
+    "icon": "static/logo.png",
+    "target": "dmg"
+  },
+  "linux": {
+    "icon": "static/logo.png",
+    "target": [
+      "snap"
+    ]
+  },
+  "files": [
+    "out/**/*"
+  ],
+  "extraMetadata": {
+    "main": "out/electron/main.js"
+  }
+}
