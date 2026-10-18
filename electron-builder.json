@@ -1,7 +1,7 @@
 {
   "appId": "com.electron.app",
-  "productName": "electronApp",
-  "copyright": "Copyright © 2025 electronApp",
+  "productName": "FapiaoKit",
+  "copyright": "Copyright © 2026 FapiaoKit",
   "directories": {
     "output": "release"
   },

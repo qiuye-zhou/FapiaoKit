@@ -20,7 +20,9 @@
     "vue3",
     "vite",
     "desktop",
-    "app"
+    "app",
+    "fapiao",
+    "kit"
   ],
   "author": "秋叶ゞ",
   "license": "MIT",
