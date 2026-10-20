@@ -33,6 +33,10 @@ export default [
         parser: tseslint.parser,
       },
     },
+    rules: {
+      // script setup 中仅在 template 使用的变量会被该 core 规则误报
+      'no-useless-assignment': 'off',
+    },
   },
   // 自定义规则
   {

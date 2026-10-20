@@ -9,6 +9,9 @@ import {
 } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
+import { scanAndParse } from './lib/invoiceService'
+import { organize } from './lib/organizeService'
+import { OrganizeRequest } from './lib/types'
 
 // 开发环境判断
 const isDev = process.env.NODE_ENV === 'development'
@@ -249,7 +252,9 @@ ipcMain.handle(
         fs.writeFileSync(result.filePath, content, 'utf8')
         return result.filePath
       } catch (error) {
-        throw new Error(`保存文件失败: ${(error as Error).message}`)
+        throw new Error(`保存文件失败: ${(error as Error).message}`, {
+          cause: error,
+        })
       }
     }
     return null
@@ -269,4 +274,26 @@ app.on('web-contents-created', (event, contents) => {
     shell.openExternal(url)
     return { action: 'deny' }
   })
+})
+
+// ================= FapiaoKit 发票整理 IPC =================
+
+ipcMain.handle('invoice:selectFolder', async (): Promise<string | null> => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    title: '选择出差发票文件夹',
+    properties: ['openDirectory'],
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+ipcMain.handle('invoice:scan', async (_event, folderPath: string) => {
+  return scanAndParse(folderPath)
+})
+
+ipcMain.handle('invoice:organize', async (_event, req: OrganizeRequest) => {
+  return organize(req)
+})
+
+ipcMain.handle('shell:openFolder', async (_event, p: string) => {
+  await shell.openPath(p)
 })

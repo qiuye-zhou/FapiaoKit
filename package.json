@@ -27,6 +27,7 @@
   "author": "秋叶ゞ",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.5.2",
     "@vitejs/plugin-vue": "^6.0.1",
     "concurrently": "^9.2.1",
@@ -37,6 +38,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-vue": "^10.1.0",
+    "globals": "^17.13.0",
     "prettier": "^3.6.2",
     "rollup-plugin-copy": "^3.5.0",
     "typescript": "^5.9.2",
@@ -46,6 +48,8 @@
     "wait-on": "^9.0.0"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
+    "pdfjs-dist": "^3.11.174",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1"
   }
