@@ -192,7 +192,7 @@ function reset(): void {
 <template>
   <div class="page">
     <header class="page-header">
-      <h1>🧾 FapiaoKit 差旅报销整理</h1>
+      <h1>FapiaoKit 差旅报销整理</h1>
       <p>选择出差文件夹 → 核对发票 → 一键重命名并生成报销单</p>
     </header>
 
@@ -372,7 +372,8 @@ function reset(): void {
       <div class="step-title">✅ 整理完成</div>
       <p class="result-line">报销单：{{ result.reportPath }}</p>
       <p class="result-line">
-        共 {{ rows.length }} 条 / {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张发票，合计
+        共 {{ rows.length }} 条 /
+        {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张发票，合计
         <strong class="result-total">¥{{ totalAmount.toFixed(2) }}</strong>
       </p>
       <details>

@@ -49,7 +49,6 @@ function cnUpperToNumber(s: string): number | null {
   let result = 0 // 已完成的大段
   let jiao = 0
   let fen = 0
-  let afterYuan = false
   for (const ch of s) {
     if (CN_DIGITS[ch] !== undefined) {
       num = CN_DIGITS[ch]
@@ -65,7 +64,6 @@ function cnUpperToNumber(s: string): number | null {
       result += section + num
       section = 0
       num = 0
-      afterYuan = true
     } else if (ch === '角') {
       jiao = num
       num = 0

@@ -1,6 +1,13 @@
 // 主进程共享类型
 
-export type InvoiceType = 'railway' | 'flight' | 'hotel' | 'taxi' | 'toll' | 'express' | 'other'
+export type InvoiceType =
+  | 'railway'
+  | 'flight'
+  | 'hotel'
+  | 'taxi'
+  | 'toll'
+  | 'express'
+  | 'other'
 
 export interface InvoiceRecord {
   id: string

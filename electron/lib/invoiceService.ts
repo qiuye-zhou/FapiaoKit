@@ -73,7 +73,8 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
   // 扫描件等无年份记录：采用本批发票中出现最多的年份
   const yearFreq = new Map<number, number>()
   for (const p of parsed) {
-    if (p.result.year) yearFreq.set(p.result.year, (yearFreq.get(p.result.year) ?? 0) + 1)
+    if (p.result.year)
+      yearFreq.set(p.result.year, (yearFreq.get(p.result.year) ?? 0) + 1)
   }
   let defaultYear = new Date().getFullYear()
   let maxFreq = 0
