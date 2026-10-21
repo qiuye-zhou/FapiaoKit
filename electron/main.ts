@@ -252,9 +252,9 @@ ipcMain.handle(
         fs.writeFileSync(result.filePath, content, 'utf8')
         return result.filePath
       } catch (error) {
-        throw new Error(`保存文件失败: ${(error as Error).message}`, {
-          cause: error,
-        })
+        const err = new Error(`保存文件失败: ${(error as Error).message}`)
+        ;(err as Error & { cause?: unknown }).cause = error
+        throw err
       }
     }
     return null

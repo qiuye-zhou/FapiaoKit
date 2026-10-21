@@ -78,12 +78,12 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
   }
   let defaultYear = new Date().getFullYear()
   let maxFreq = 0
-  for (const [y, n] of yearFreq) {
+  yearFreq.forEach((n, y) => {
     if (n > maxFreq) {
       maxFreq = n
       defaultYear = y
     }
-  }
+  })
 
   const records: InvoiceRecord[] = []
   for (const inv of invoices) {
