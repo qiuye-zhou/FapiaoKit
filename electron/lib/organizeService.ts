@@ -63,6 +63,12 @@ export async function organize(req: OrganizeRequest): Promise<OrganizeResult> {
   const ws = wb.getWorksheet(1)
   if (!ws) throw new Error('报销单模板缺少工作表')
 
+  // 防御：清除数据区残留的合并单元格，否则写入会错位
+  for (const m of [...(ws.model.merges || [])]) {
+    const startRow = parseInt((m.match(/[A-Z]+(\d+)/) || [])[1] || '0', 10)
+    if (startRow >= 8 && startRow <= 8 + MAX_ROWS - 1) ws.unMergeCells(m)
+  }
+
   ws.getCell('F4').value = req.projectCategory
   ws.getCell('G4').value =
     `报销日期：  ${req.reportDate.y}  年 ${req.reportDate.m} 月 ${req.reportDate.d} 日`

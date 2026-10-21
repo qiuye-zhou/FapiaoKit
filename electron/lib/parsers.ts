@@ -1,4 +1,4 @@
-﻿// 发票 PDF 文本解析器
+// 发票 PDF 文本解析器
 // 核心思路：先做 compact 归一化（去掉所有 | 和空格），横排版与竖排版（逐字切开）统一处理
 import { simplifyStation, findCityInText } from './cityDict'
 import { InvoiceType } from './types'
@@ -323,6 +323,37 @@ function parseHotel(c: string, fileName: string): ParseResult {
 }
 
 // ================= 扫描件 / 兜底 =================
+/**
+ * 从已整理的规范文件名回读：01-上海-南京高铁-9.18-162.pdf /
+ * 08-打车-9.10-138.8-行程单.pdf
+ * 用于扫描件（无文本层）再次扫描时保留人工填写过的内容与金额
+ */
+function parseOrganizedName(fileName: string): ParseResult | null {
+  const m = fileName
+    .replace(/\.pdf$/i, '')
+    .match(/^\d{2}-(.+?)-(\d{1,2})\.(\d{1,2})-(\d+(?:\.\d+)?)(-行程单)?$/)
+  if (!m) return null
+
+  const content = m[1]
+  let type: InvoiceType = 'other'
+  if (/高铁|退票费/.test(content)) type = 'railway'
+  else if (/飞机|机票/.test(content)) type = 'flight'
+  else if (/住宿/.test(content)) type = 'hotel'
+  else if (content === '打车') type = 'taxi'
+  else if (/高速/.test(content)) type = 'toll'
+  else if (/快递/.test(content)) type = 'express'
+
+  return {
+    matched: true,
+    role: m[5] ? 'attachment' : 'invoice',
+    type,
+    content,
+    month: +m[2],
+    day: +m[3],
+    amount: parseFloat(m[4]),
+  }
+}
+
 function parseFallback(
   c: string,
   fileName: string,
@@ -364,5 +395,5 @@ export function parseInvoiceText(raw: string, fileName: string): ParseResult {
   }
   const hotel = parseHotel(c, fileName)
   if (hotel.matched) return hotel
-  return parseFallback(c, fileName, raw.length)
+  return parseOrganizedName(fileName) ?? parseFallback(c, fileName, raw.length)
 }

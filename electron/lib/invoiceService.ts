@@ -70,6 +70,20 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
   )
   const usedTrips = new Set<string>()
 
+  // 扫描件等无年份记录：采用本批发票中出现最多的年份
+  const yearFreq = new Map<number, number>()
+  for (const p of parsed) {
+    if (p.result.year) yearFreq.set(p.result.year, (yearFreq.get(p.result.year) ?? 0) + 1)
+  }
+  let defaultYear = new Date().getFullYear()
+  let maxFreq = 0
+  for (const [y, n] of yearFreq) {
+    if (n > maxFreq) {
+      maxFreq = n
+      defaultYear = y
+    }
+  }
+
   const records: InvoiceRecord[] = []
   for (const inv of invoices) {
     const r = inv.result
@@ -77,7 +91,7 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
       id: randomUUID(),
       type: r.type ?? 'other',
       content: r.content ?? inv.file.replace(/\.pdf$/i, ''),
-      year: r.year ?? 0,
+      year: r.year ?? defaultYear,
       month: r.month ?? 0,
       day: r.day ?? 0,
       amount: r.amount ?? 0,

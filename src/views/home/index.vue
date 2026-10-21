@@ -53,6 +53,14 @@ const defaultFolderName = computed(() =>
   orgName.value && tripRange.value ? `${orgName.value}${tripRange.value}` : '',
 )
 
+// 发票金额合计（实时随表格编辑更新）
+const totalAmount = computed(() =>
+  rows.value.reduce((s, r) => {
+    const v = Number(r.amount)
+    return s + (Number.isFinite(v) ? v : 0)
+  }, 0),
+)
+
 const canOrganize = computed(
   () =>
     folderPath.value &&
@@ -209,6 +217,7 @@ function reset(): void {
       <div class="step-title">
         <span class="step-no">2</span>核对发票（{{ rows.length }} 条 / 共
         {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张）
+        <span class="total-badge">合计 ¥{{ totalAmount.toFixed(2) }}</span>
         <span class="step-tip">黄色行需人工核对；顺序即报销单行序</span>
       </div>
       <table class="invoice-table">
@@ -362,6 +371,10 @@ function reset(): void {
     <section v-if="result" class="card result-card">
       <div class="step-title">✅ 整理完成</div>
       <p class="result-line">报销单：{{ result.reportPath }}</p>
+      <p class="result-line">
+        共 {{ rows.length }} 条 / {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张发票，合计
+        <strong class="result-total">¥{{ totalAmount.toFixed(2) }}</strong>
+      </p>
       <details>
         <summary>重命名清单（{{ result.renamed.length }} 个文件）</summary>
         <div v-for="(r, i) in result.renamed" :key="i" class="rename-line">
@@ -430,6 +443,15 @@ function reset(): void {
   font-size: 12px;
   font-weight: 400;
   color: #8492a6;
+}
+.total-badge {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: #3b55d9;
+  font-size: 14px;
+  font-weight: 700;
 }
 .folder-row {
   display: flex;
@@ -658,5 +680,9 @@ function reset(): void {
 }
 .rename-line .to {
   color: #2e7d32;
+}
+.result-total {
+  color: #3b55d9;
+  font-size: 16px;
 }
 </style>
