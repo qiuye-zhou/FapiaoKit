@@ -2,6 +2,7 @@
   "appId": "com.electron.app",
   "productName": "FapiaoKit",
   "copyright": "Copyright © 2026 FapiaoKit",
+  "npmRebuild": false,
   "directories": {
     "output": "release"
   },

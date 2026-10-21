@@ -26,11 +26,20 @@ export async function extractPdfText(filePath: string): Promise<string> {
     cMapPacked: true,
     standardFontDataUrl,
   }).promise
-  const parts: string[] = []
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i)
-    const tc = await page.getTextContent()
-    parts.push(tc.items.map((it: { str: string }) => it.str).join('|'))
+  try {
+    const parts: string[] = []
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i)
+      const tc = await page.getTextContent()
+      parts.push(tc.items.map((it: { str: string }) => it.str).join('|'))
+    }
+    return parts.join('\n')
+  } finally {
+    // 立即释放文档资源，避免批量处理时的内存/句柄累积
+    try {
+      doc.destroy()
+    } catch {
+      /* ignore */
+    }
   }
-  return parts.join('\n')
 }

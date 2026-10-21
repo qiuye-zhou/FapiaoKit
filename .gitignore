@@ -9,6 +9,7 @@ dist/
 dist-electron/
 release/
 build/
+.eb-cache/
 
 # Environment variables
 .env.local

@@ -11,6 +11,8 @@ const TYPE_LABEL: Record<string, string> = {
   flight: '飞机',
   hotel: '住宿',
   taxi: '打车',
+  toll: '高速',
+  express: '快递',
   other: '其他',
 }
 
@@ -129,13 +131,18 @@ async function startOrganize(): Promise<void> {
       errorMsg.value = `第 ${i + 1} 行金额不正确`
       return
     }
+    // 手动构建纯对象：reactive proxy（含嵌套 files 数组代理）无法通过 IPC 结构化克隆
     records.push({
-      ...row,
+      id: row.id,
+      type: row.type,
+      content: row.content.trim(),
       year: dt.y,
       month: dt.m,
       day: dt.d,
-      content: row.content.trim(),
       amount: Number(row.amount),
+      files: [...row.files],
+      needConfirm: row.needConfirm,
+      note: row.note,
     })
   }
 
@@ -532,6 +539,14 @@ function reset(): void {
 .tag.taxi {
   background: #fff3e0;
   color: #e65100;
+}
+.tag.toll {
+  background: #e0f7fa;
+  color: #00695c;
+}
+.tag.express {
+  background: #fce4ec;
+  color: #ad1457;
 }
 .tag.other {
   background: #eceff1;

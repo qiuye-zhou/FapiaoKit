@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import ExcelJS from 'exceljs'
 import { InvoiceRecord, OrganizeRequest, OrganizeResult } from './types'
 
-const MAX_ROWS = 11 // 模板数据区为第 8-18 行
+const MAX_ROWS = 50 // 模板数据区为第 8-57 行
 
 function formatAmount(amount: number): string {
   return String(Number(amount.toFixed(2)))

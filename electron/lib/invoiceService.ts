@@ -11,13 +11,15 @@ export interface ScanResult {
   warnings: string[]
 }
 
-// 报销单默认行序：高铁 → 飞机 → 住宿 → 打车 → 其他（组内按文件名字典序，与样例一致）
+// 报销单默认行序：高铁 → 飞机 → 住宿 → 打车 → 高速 → 快递 → 其他（组内按文件名字典序）
 const TYPE_ORDER: Record<InvoiceType, number> = {
   railway: 0,
   flight: 1,
   hotel: 2,
   taxi: 3,
-  other: 4,
+  toll: 4,
+  express: 5,
+  other: 6,
 }
 
 export async function scanAndParse(folderPath: string): Promise<ScanResult> {
@@ -32,11 +34,20 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
   }
   const parsed: Parsed[] = []
   for (const f of files) {
-    try {
-      const text = await extractPdfText(path.join(folderPath, f))
-      parsed.push({ file: f, result: parseInvoiceText(text, f) })
-    } catch (e) {
-      warnings.push(`PDF 解析失败 ${f}: ${(e as Error).message}`)
+    let lastErr: Error | null = null
+    let text = ''
+    // 连续处理大量 PDF 时 pdfjs 偶发栈溢出，重试一次通常可恢复
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        text = await extractPdfText(path.join(folderPath, f))
+        lastErr = null
+        break
+      } catch (e) {
+        lastErr = e as Error
+      }
+    }
+    if (lastErr) {
+      warnings.push(`PDF 解析失败 ${f}: ${lastErr.message}`)
       parsed.push({
         file: f,
         result: {
@@ -48,7 +59,9 @@ export async function scanAndParse(folderPath: string): Promise<ScanResult> {
           note: 'PDF 解析失败，请手动填写',
         },
       })
+      continue
     }
+    parsed.push({ file: f, result: parseInvoiceText(text, f) })
   }
 
   const invoices = parsed.filter((p) => p.result.role === 'invoice')
