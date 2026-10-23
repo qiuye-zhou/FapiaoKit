@@ -1,6 +1,13 @@
 // 渲染进程共享类型
 
-export type InvoiceType = 'railway' | 'flight' | 'hotel' | 'taxi' | 'other'
+export type InvoiceType =
+  | 'railway'
+  | 'flight'
+  | 'hotel'
+  | 'taxi'
+  | 'toll'
+  | 'express'
+  | 'other'
 
 export interface InvoiceRecord {
   id: string
@@ -48,6 +55,7 @@ export interface ElectronAPI {
   scanFolder: (folderPath: string) => Promise<ScanResult>
   organize: (req: OrganizeRequest) => Promise<OrganizeResult>
   openFolder: (p: string) => Promise<void>
+  readPdf: (filePath: string) => Promise<Uint8Array>
   minimize: () => Promise<void>
   maximize: () => Promise<void>
   close: () => Promise<void>

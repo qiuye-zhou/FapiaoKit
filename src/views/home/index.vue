@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { InvoiceRecord, OrganizeResult } from '@/types/electron'
+import PdfPreviewDialog from '@/components/PdfPreviewDialog.vue'
 
 interface RowVM extends InvoiceRecord {
   dateStr: string
@@ -85,9 +86,64 @@ function parseRowDate(s: string): { y: number; m: number; d: number } | null {
 }
 
 // ============ 操作 ============
+// PDF 预览弹框
+const preview = ref<{ rowId: string; files: string[]; label: string } | null>(
+  null,
+)
+
+function openPreview(row: RowVM): void {
+  preview.value = {
+    rowId: row.id,
+    files: row.files.map((f) => `${folderPath.value}/${f}`),
+    label: row.content || row.files[0],
+  }
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+// 从选中文字解析日期：支持 2026年09月09日 / 2026-9-9 / 09月18日 / 9.18
+function parseFillDate(text: string, row: RowVM): string | null {
+  const t = text.replace(/\s+/g, '')
+  let m = t.match(/(\d{4})\D{0,3}(\d{1,2})\D{0,3}(\d{1,2})/)
+  if (m) return `${m[1]}-${pad2(+m[2])}-${pad2(+m[3])}`
+  m = t.match(/(\d{1,2})月(\d{1,2})日?/) ?? t.match(/(\d{1,2})[./-](\d{1,2})/)
+  if (m) {
+    const y = parseRowDate(row.dateStr)?.y ?? ticketYear.value
+    return `${y}-${pad2(+m[1])}-${pad2(+m[2])}`
+  }
+  return null
+}
+
+function onFill(p: {
+  rowId: string
+  field: 'content' | 'date' | 'amount'
+  value: string
+}): void {
+  const row = rows.value.find((r) => r.id === p.rowId)
+  if (!row) return
+  const text = p.value.trim()
+  if (p.field === 'content') {
+    row.content = text
+  } else if (p.field === 'amount') {
+    const m = text.replace(/[¥￥,]/g, '').match(/(\d+(?:\.\d+)?)/)
+    if (m) row.amount = parseFloat(m[1])
+  } else {
+    const d = parseFillDate(text, row)
+    if (d) row.dateStr = d
+  }
+  // 三项齐全后自动取消「需核对」标记
+  if (row.content.trim() && row.amount > 0 && parseRowDate(row.dateStr)) {
+    row.needConfirm = false
+    if (row.note && /手动|扫描件|核对/.test(row.note)) row.note = undefined
+  }
+}
+
 async function selectFolder(): Promise<void> {
   errorMsg.value = ''
   result.value = null
+  preview.value = null
   const p = await window.electronAPI.selectFolder()
   if (!p) return
   folderPath.value = p
@@ -229,6 +285,7 @@ function reset(): void {
             <th style="width: 180px">报销内容</th>
             <th style="width: 110px">日期</th>
             <th style="width: 90px">金额</th>
+            <th style="width: 52px">预览</th>
             <th style="width: 70px">排序</th>
           </tr>
         </thead>
@@ -264,6 +321,15 @@ function reset(): void {
                 step="0.01"
                 class="cell-input center"
               />
+            </td>
+            <td class="preview-cell">
+              <button
+                class="preview-btn"
+                title="预览 PDF，可选中文字右键填充字段"
+                @click="openPreview(row)"
+              >
+                🔍
+              </button>
             </td>
             <td class="move">
               <button :disabled="i === 0" title="上移" @click="moveRow(i, -1)">
@@ -390,6 +456,16 @@ function reset(): void {
         <button class="btn" @click="reset">整理下一个</button>
       </div>
     </section>
+
+    <!-- PDF 预览弹框（可移动、非模态，选中文字右键填充当前行） -->
+    <PdfPreviewDialog
+      v-if="preview"
+      :file-paths="preview.files"
+      :row-id="preview.rowId"
+      :row-label="preview.label"
+      @close="preview = null"
+      @fill="onFill"
+    />
   </div>
 </template>
 
@@ -614,6 +690,20 @@ function reset(): void {
 .move button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+.preview-cell {
+  text-align: center;
+}
+.preview-btn {
+  border: 1px solid #d0d7e2;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.preview-btn:hover {
+  background: #eef2ff;
+  border-color: #3b55d9;
 }
 
 .form-grid {

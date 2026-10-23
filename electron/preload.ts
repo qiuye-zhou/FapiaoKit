@@ -23,6 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   organize: (req: unknown) => ipcRenderer.invoke('invoice:organize', req),
   // 在资源管理器中打开文件夹
   openFolder: (p: string) => ipcRenderer.invoke('shell:openFolder', p),
+  // 读取 PDF 字节流（预览用）
+  readPdf: (filePath: string): Promise<Uint8Array> =>
+    ipcRenderer.invoke('invoice:readPdf', filePath),
 
   // 窗口控制
   minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),

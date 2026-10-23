@@ -5,6 +5,7 @@ import {
   shell,
   ipcMain,
   dialog,
+  protocol,
   MenuItemConstructorOptions,
 } from 'electron'
 import * as path from 'path'
@@ -12,6 +13,19 @@ import * as fs from 'fs'
 import { scanAndParse } from './lib/invoiceService'
 import { organize } from './lib/organizeService'
 import { OrganizeRequest } from './lib/types'
+
+// 自定义资源协议（渲染进程加载 pdfjs cMap/字体用），必须在 app ready 前注册
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app-res',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+])
 
 // 开发环境判断
 const isDev = process.env.NODE_ENV === 'development'
@@ -79,6 +93,32 @@ function createWindow(): void {
 
 // 当 Electron 完成初始化并准备创建浏览器窗口时调用此方法
 app.whenReady().then(() => {
+  // app-res://cmaps/* → node_modules/pdfjs-dist/cmaps/*
+  // app-res://fonts/* → node_modules/pdfjs-dist/standard_fonts/*
+  const pdfjsDir = path.dirname(require.resolve('pdfjs-dist/package.json'))
+  protocol.handle('app-res', (req) => {
+    try {
+      const url = new URL(req.url)
+      const rest = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+      const base =
+        url.host === 'cmaps'
+          ? path.join(pdfjsDir, 'cmaps')
+          : url.host === 'fonts'
+            ? path.join(pdfjsDir, 'standard_fonts')
+            : null
+      if (!base) return new Response('not found', { status: 404 })
+      const file = path.join(base, rest)
+      if (!file.startsWith(base) || !fs.existsSync(file)) {
+        return new Response('not found', { status: 404 })
+      }
+      return new Response(fs.readFileSync(file), {
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      })
+    } catch {
+      return new Response('error', { status: 500 })
+    }
+  })
+
   createWindow()
 
   // 在 macOS 上，当单击 dock 图标并且没有其他窗口打开时，
@@ -296,4 +336,10 @@ ipcMain.handle('invoice:organize', async (_event, req: OrganizeRequest) => {
 
 ipcMain.handle('shell:openFolder', async (_event, p: string) => {
   await shell.openPath(p)
+})
+
+// 读取 PDF 字节流，供渲染进程 pdfjs 预览
+ipcMain.handle('invoice:readPdf', async (_event, filePath: string) => {
+  const data = fs.readFileSync(filePath)
+  return new Uint8Array(data)
 })
