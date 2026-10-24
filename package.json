@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "electron:dev": "concurrently \"npm run build:web && npm run build:electron && npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
-    "build:win": "npm run build:web && npm run build:electron && cross-env ELECTRON_BUILDER_CACHE=.eb-cache electron-builder --win --publish=never",
+    "build:win": "npm run build:web && npm run build:electron && cross-env ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win --publish=never",
     "postinstall": "electron-builder install-app-deps",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix ."
