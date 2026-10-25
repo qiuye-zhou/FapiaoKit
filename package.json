@@ -1,7 +1,7 @@
 {
   "name": "FapiaoKit",
   "version": "1.0.0",
-  "description": "",
+  "description": "基于 Electron 的差旅发票整理工具：自动解析 PDF 发票、识别类型与金额、批量重命名并生成 Excel 报销单",
   "main": "out/electron/main.js",
   "scripts": {
     "dev": "vite",
