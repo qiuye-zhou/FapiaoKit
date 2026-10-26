@@ -27,9 +27,19 @@ export interface InvoiceRecord {
   note?: string
 }
 
+export interface CustomItem {
+  /** 名称，如 差旅补贴 */
+  content: string
+  amount: number
+  /** 备注 */
+  note?: string
+}
+
 export interface OrganizeRequest {
   folderPath: string
   records: InvoiceRecord[]
+  /** 自定义条目（补贴等），不关联 PDF，直接写入报销单 */
+  customItems?: CustomItem[]
   projectCategory: string
   reportName: string
   reportDate: { y: number; m: number; d: number }

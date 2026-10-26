@@ -33,10 +33,13 @@ function resolveTemplatePath(): string {
 export async function organize(req: OrganizeRequest): Promise<OrganizeResult> {
   const warnings: string[] = []
   const { folderPath, records } = req
-  if (records.length === 0) throw new Error('没有可整理的发票')
-  if (records.length > MAX_ROWS) {
+  const customItems = req.customItems ?? []
+  if (records.length === 0 && customItems.length === 0) {
+    throw new Error('没有可整理的发票或自定义条目')
+  }
+  if (records.length + customItems.length > MAX_ROWS) {
     throw new Error(
-      `发票共 ${records.length} 条，超过模板容量（${MAX_ROWS} 行），请分批整理`,
+      `发票与自定义条目共 ${records.length + customItems.length} 条，超过模板容量（${MAX_ROWS} 行），请分批整理`,
     )
   }
 
@@ -80,6 +83,14 @@ export async function organize(req: OrganizeRequest): Promise<OrganizeResult> {
     ws.getCell(`E${r}`).value = rec.day
     ws.getCell(`F${r}`).value = rec.content
     ws.getCell(`H${r}`).value = rec.amount
+  })
+
+  // 自定义条目（补贴等）只写报销内容、金额与备注，无发票日期
+  customItems.forEach((item, i) => {
+    const r = 8 + records.length + i
+    ws.getCell(`F${r}`).value = item.content
+    ws.getCell(`H${r}`).value = item.amount
+    if (item.note) ws.getCell(`Q${r}`).value = item.note
   })
 
   const totalFiles = records.reduce((s, r) => s + r.files.length, 0)

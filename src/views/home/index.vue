@@ -7,6 +7,13 @@ interface RowVM extends InvoiceRecord {
   dateStr: string
 }
 
+interface CustomItemVM {
+  id: string
+  content: string
+  amount: number | null
+  note: string
+}
+
 const TYPE_LABEL: Record<string, string> = {
   railway: '高铁',
   flight: '飞机',
@@ -22,6 +29,10 @@ const folderPath = ref('')
 const scanning = ref(false)
 const rows = ref<RowVM[]>([])
 const warnings = ref<string[]>([])
+
+// 自定义条目（补贴等），不关联 PDF，直接写入报销单
+let customItemSeq = 0
+const customItems = ref<CustomItemVM[]>([])
 
 const projectCategory = ref('应急警报')
 const orgName = ref('')
@@ -62,10 +73,25 @@ const totalAmount = computed(() =>
   }, 0),
 )
 
+// 自定义条目小计
+const customTotal = computed(() =>
+  customItems.value.reduce((s, it) => {
+    const v = Number(it.amount)
+    return s + (Number.isFinite(v) ? v : 0)
+  }, 0),
+)
+
+const grandTotal = computed(() => totalAmount.value + customTotal.value)
+
+// 有发票或有自定义条目即可进入后续步骤
+const hasEntries = computed(
+  () => rows.value.length > 0 || customItems.value.length > 0,
+)
+
 const canOrganize = computed(
   () =>
     folderPath.value &&
-    rows.value.length > 0 &&
+    hasEntries.value &&
     projectCategory.value.trim() &&
     defaultReportName.value &&
     !organizing.value,
@@ -176,6 +202,19 @@ function moveRow(i: number, dir: -1 | 1): void {
   rows.value = arr
 }
 
+function addCustomItem(): void {
+  customItems.value.push({
+    id: `custom-${++customItemSeq}`,
+    content: '',
+    amount: null,
+    note: '',
+  })
+}
+
+function removeCustomItem(i: number): void {
+  customItems.value.splice(i, 1)
+}
+
 async function startOrganize(): Promise<void> {
   errorMsg.value = ''
   // 校验并回写日期
@@ -211,11 +250,32 @@ async function startOrganize(): Promise<void> {
   }
 
   const [ry, rm, rd] = reportDateStr.value.split('-').map(Number)
+
+  // 校验自定义条目并转为纯对象
+  const customs: Array<{ content: string; amount: number; note?: string }> = []
+  for (let i = 0; i < customItems.value.length; i++) {
+    const it = customItems.value[i]
+    if (!it.content.trim()) {
+      errorMsg.value = `自定义条目第 ${i + 1} 条名称不能为空`
+      return
+    }
+    if (!(Number(it.amount) > 0)) {
+      errorMsg.value = `自定义条目第 ${i + 1} 条金额不正确`
+      return
+    }
+    customs.push({
+      content: it.content.trim(),
+      amount: Number(it.amount),
+      note: it.note.trim() || undefined,
+    })
+  }
+
   organizing.value = true
   try {
     const r = await window.electronAPI.organize({
       folderPath: folderPath.value,
       records,
+      customItems: customs,
       projectCategory: projectCategory.value.trim(),
       reportName: reportNameInput.value.trim() || defaultReportName.value,
       reportDate: { y: ry, m: rm, d: rd },
@@ -239,6 +299,7 @@ function openResultFolder(): void {
 function reset(): void {
   folderPath.value = ''
   rows.value = []
+  customItems.value = []
   warnings.value = []
   result.value = null
   errorMsg.value = ''
@@ -358,8 +419,71 @@ function reset(): void {
       </div>
     </section>
 
+    <!-- 自定义条目：补贴等，不关联 PDF -->
+    <section v-if="folderPath" class="card">
+      <div class="step-title">
+        <span class="step-no">＋</span>自定义条目
+        <span v-if="customItems.length" class="total-badge"
+          >小计 ¥{{ customTotal.toFixed(2) }}</span
+        >
+      </div>
+      <table v-if="customItems.length" class="invoice-table">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th style="width: 120px">金额</th>
+            <th>备注</th>
+            <th style="width: 52px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, i) in customItems" :key="item.id">
+            <td>
+              <input
+                v-model="item.content"
+                class="cell-input"
+                placeholder="如：差旅补贴"
+              />
+            </td>
+            <td>
+              <input
+                v-model.number="item.amount"
+                type="number"
+                min="0"
+                step="0.01"
+                class="cell-input center"
+              />
+            </td>
+            <td>
+              <input
+                v-model="item.note"
+                class="cell-input"
+                placeholder="可选"
+              />
+            </td>
+            <td class="preview-cell">
+              <button
+                class="preview-btn"
+                title="删除该条目"
+                @click="removeCustomItem(i)"
+              >
+                ✕
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="custom-actions">
+        <button class="btn" @click="addCustomItem">添加一条</button>
+        <span class="hint-inline"
+          >名称、金额会写入报销单，备注写入「备注」列；不参与 PDF
+          重命名，无发生日期</span
+        >
+      </div>
+    </section>
+
     <!-- 步骤 3：报销信息 -->
-    <section v-if="rows.length" class="card">
+    <section v-if="hasEntries" class="card">
       <div class="step-title"><span class="step-no">3</span>报销信息</div>
       <div class="form-grid">
         <label>项目类别</label>
@@ -417,7 +541,7 @@ function reset(): void {
     </section>
 
     <!-- 步骤 4：执行 -->
-    <section v-if="rows.length" class="card action-card">
+    <section v-if="hasEntries" class="card action-card">
       <button
         class="btn btn-primary btn-lg"
         :disabled="!canOrganize"
@@ -438,9 +562,12 @@ function reset(): void {
       <div class="step-title">✅ 整理完成</div>
       <p class="result-line">报销单：{{ result.reportPath }}</p>
       <p class="result-line">
-        共 {{ rows.length }} 条 /
-        {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张发票，合计
-        <strong class="result-total">¥{{ totalAmount.toFixed(2) }}</strong>
+        发票 {{ rows.length }} 条 /
+        {{ rows.reduce((s, r) => s + r.files.length, 0) }} 张<template
+          v-if="customItems.length"
+          >，自定义条目 {{ customItems.length }} 条</template
+        >，合计
+        <strong class="result-total">¥{{ grandTotal.toFixed(2) }}</strong>
       </p>
       <details>
         <summary>重命名清单（{{ result.renamed.length }} 个文件）</summary>
@@ -673,6 +800,13 @@ function reset(): void {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.custom-actions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .year-input {
   width: 90px;
