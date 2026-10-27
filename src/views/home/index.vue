@@ -190,9 +190,13 @@ async function scan(): Promise<void> {
   try {
     const r = await window.electronAPI.scanFolder(folderPath.value)
     warnings.value = r.warnings
+    // dateStr 统一为 YYYY-MM-DD，方便原生 date picker
     rows.value = r.records.map((rec) => ({
       ...rec,
-      dateStr: rec.month ? `${rec.month}.${rec.day}` : '',
+      dateStr:
+        rec.month && rec.day
+          ? `${rec.year}-${pad2(rec.month)}-${pad2(rec.day)}`
+          : '',
     }))
   } catch (e) {
     errorMsg.value = `扫描失败：${(e as Error).message}`
@@ -351,7 +355,7 @@ function reset(): void {
             <th>文件</th>
             <th style="width: 56px">类型</th>
             <th style="width: 180px">报销内容</th>
-            <th style="width: 110px">日期</th>
+            <th style="width: 130px">日期</th>
             <th style="width: 90px">金额</th>
             <th style="width: 52px">预览</th>
             <th style="width: 70px">排序</th>
@@ -377,8 +381,8 @@ function reset(): void {
             <td>
               <input
                 v-model="row.dateStr"
+                type="date"
                 class="cell-input center"
-                placeholder="9.28"
               />
             </td>
             <td>
