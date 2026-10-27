@@ -49,9 +49,10 @@ const result = ref<OrganizeResult | null>(null)
 const errorMsg = ref('')
 
 // ============ 派生 ============
+// 行程日期使用原生日期选择器，值为 YYYY-MM-DD
 const tripRange = computed(() => {
-  const s = parseMD(tripStart.value)
-  const e = parseMD(tripEnd.value)
+  const s = parseIsoDate(tripStart.value)
+  const e = parseIsoDate(tripEnd.value)
   if (!s || !e) return ''
   return `${s.m}.${s.d}-${e.m}.${e.d}`
 })
@@ -101,6 +102,12 @@ const canOrganize = computed(
 function parseMD(s: string): { m: number; d: number } | null {
   const m = s.trim().match(/^(\d{1,2})[./-](\d{1,2})$/)
   return m ? { m: +m[1], d: +m[2] } : null
+}
+
+// 日期选择器的值：YYYY-MM-DD
+function parseIsoDate(s: string): { m: number; d: number } | null {
+  const m = s.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  return m ? { m: +m[2], d: +m[3] } : null
 }
 
 function parseRowDate(s: string): { y: number; m: number; d: number } | null {
@@ -508,13 +515,9 @@ function reset(): void {
 
         <label>行程起止</label>
         <div class="inline">
-          <input
-            v-model="tripStart"
-            class="cell-input date"
-            placeholder="9.28"
-          />
+          <input v-model="tripStart" type="date" class="cell-input date" />
           <span>至</span>
-          <input v-model="tripEnd" class="cell-input date" placeholder="9.29" />
+          <input v-model="tripEnd" type="date" class="cell-input date" />
         </div>
 
         <label>报销日期</label>
@@ -857,8 +860,7 @@ function reset(): void {
   gap: 8px;
 }
 .inline .date {
-  width: 90px;
-  text-align: center;
+  width: 150px;
 }
 .chip {
   border: 1px solid #d0d7e2;
