@@ -144,74 +144,88 @@ app.on('window-all-closed', () => {
 
 // 创建应用菜单
 function createMenu(): void {
-  const template: MenuItemConstructorOptions[] = [
+  const isMac = process.platform === 'darwin'
+
+  // 视图菜单：开发环境才需要刷新与开发者工具
+  const viewSubmenu: MenuItemConstructorOptions[] = []
+  if (isDev) {
+    viewSubmenu.push(
+      { label: '重新加载', accelerator: 'CmdOrCtrl+R', role: 'reload' },
+      {
+        label: '强制重新加载',
+        accelerator: 'CmdOrCtrl+Shift+R',
+        role: 'forceReload',
+      },
+      {
+        label: '切换开发者工具',
+        accelerator: isMac ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
+        role: 'toggleDevTools',
+      },
+      { type: 'separator' },
+    )
+  }
+  viewSubmenu.push(
+    { label: '实际大小', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+    { label: '放大', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
+    { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+    { type: 'separator' },
     {
-      label: '文件',
-      submenu: [
-        {
-          label: '新建',
-          accelerator: 'CmdOrCtrl+N',
-          click: () => {
-            // 这里可以添加新建文件的逻辑
-            console.log('新建文件')
-          },
-        },
-        {
-          label: '打开',
-          accelerator: 'CmdOrCtrl+O',
-          click: () => {
-            // 这里可以添加打开文件的逻辑
-            console.log('打开文件')
-          },
-        },
-        { type: 'separator' },
-        {
-          label: '退出',
-          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
-          click: () => {
-            app.quit()
-          },
-        },
-      ],
+      label: '切换全屏',
+      accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
+      role: 'togglefullscreen',
     },
+  )
+
+  const template: MenuItemConstructorOptions[] = [
+    // macOS 应用菜单
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { label: `关于 ${app.name}`, role: 'about' },
+              { type: 'separator' },
+              { label: '隐藏', role: 'hide' },
+              { label: '隐藏其他', role: 'hideOthers' },
+              { label: '显示全部', role: 'unhide' },
+              { type: 'separator' },
+              { label: '退出', role: 'quit' },
+            ],
+          } as MenuItemConstructorOptions,
+        ]
+      : []),
+    // 非 macOS 保留文件菜单用于退出
+    ...(isMac
+      ? []
+      : [
+          {
+            label: '文件',
+            submenu: [
+              {
+                label: '退出',
+                accelerator: 'Ctrl+Q',
+                click: () => app.quit(),
+              },
+            ],
+          } as MenuItemConstructorOptions,
+        ]),
     {
       label: '编辑',
       submenu: [
         { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
-        { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+        {
+          label: '重做',
+          accelerator: isMac ? 'Shift+Cmd+Z' : 'Ctrl+Y',
+          role: 'redo',
+        },
         { type: 'separator' },
         { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
         { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
         { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' },
       ],
     },
-    {
-      label: '视图',
-      submenu: [
-        { label: '重新加载', accelerator: 'CmdOrCtrl+R', role: 'reload' },
-        {
-          label: '强制重新加载',
-          accelerator: 'CmdOrCtrl+Shift+R',
-          role: 'forceReload',
-        },
-        {
-          label: '切换开发者工具',
-          accelerator:
-            process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
-          role: 'toggleDevTools',
-        },
-        { type: 'separator' },
-        { label: '实际大小', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
-        { label: '放大', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
-        { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
-        { type: 'separator' },
-        {
-          label: '切换全屏',
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+F' : 'F11',
-          role: 'togglefullscreen',
-        },
-      ],
-    },
+    { label: '视图', submenu: viewSubmenu },
     {
       label: '窗口',
       submenu: [
@@ -223,18 +237,28 @@ function createMenu(): void {
       label: '帮助',
       submenu: [
         {
-          label: '关于',
+          label: `关于 ${app.name}`,
           click: () => {
-            // 这里可以添加关于对话框
-            console.log('关于应用')
+            const options = {
+              type: 'info' as const,
+              title: `关于 ${app.name}`,
+              message: `${app.name} v${app.getVersion()}`,
+              detail:
+                '差旅发票整理工具\n自动解析 PDF 发票、批量重命名并生成 Excel 报销单',
+              buttons: ['确定'],
+            }
+            if (mainWindow) {
+              dialog.showMessageBox(mainWindow, options)
+            } else {
+              dialog.showMessageBox(options)
+            }
           },
         },
       ],
     },
   ]
 
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
 // IPC 处理器
