@@ -16,16 +16,21 @@
     "lint:fix": "eslint --cache --fix ."
   },
   "keywords": [
+    "fapiao",
+    "expense",
+    "expense-report",
+    "travel",
+    "pdf-parser",
+    "exceljs",
     "electron",
     "vue3",
     "vite",
-    "desktop",
-    "app",
-    "fapiao",
-    "kit"
+    "typescript",
+    "desktop-app",
+    "windows"
   ],
   "author": "秋叶ゞ",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.5.2",
