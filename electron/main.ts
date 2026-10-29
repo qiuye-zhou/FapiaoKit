@@ -13,6 +13,7 @@ import * as fs from 'fs'
 import { scanAndParse } from './lib/invoiceService'
 import { organize } from './lib/organizeService'
 import { OrganizeRequest } from './lib/types'
+import { BUILD_TIME } from './lib/buildInfo'
 
 // 自定义资源协议（渲染进程加载 pdfjs cMap/字体用），必须在 app ready 前注册
 protocol.registerSchemesAsPrivileged([
@@ -142,6 +143,24 @@ app.on('window-all-closed', () => {
   }
 })
 
+// 关于对话框
+function showAbout(): void {
+  const options = {
+    type: 'info' as const,
+    title: `关于 ${app.name}`,
+    message: `${app.name} v${app.getVersion()}`,
+    detail:
+      '差旅发票整理工具\n自动解析 PDF 发票、批量重命名并生成 Excel 报销单\n\n' +
+      `构建时间：${BUILD_TIME}`,
+    buttons: ['确定'],
+  }
+  if (mainWindow) {
+    dialog.showMessageBox(mainWindow, options)
+  } else {
+    dialog.showMessageBox(options)
+  }
+}
+
 // 创建应用菜单
 function createMenu(): void {
   const isMac = process.platform === 'darwin'
@@ -183,7 +202,7 @@ function createMenu(): void {
           {
             label: app.name,
             submenu: [
-              { label: `关于 ${app.name}`, role: 'about' },
+              { label: `关于 ${app.name}`, click: showAbout },
               { type: 'separator' },
               { label: '隐藏', role: 'hide' },
               { label: '隐藏其他', role: 'hideOthers' },
@@ -238,21 +257,7 @@ function createMenu(): void {
       submenu: [
         {
           label: `关于 ${app.name}`,
-          click: () => {
-            const options = {
-              type: 'info' as const,
-              title: `关于 ${app.name}`,
-              message: `${app.name} v${app.getVersion()}`,
-              detail:
-                '差旅发票整理工具\n自动解析 PDF 发票、批量重命名并生成 Excel 报销单',
-              buttons: ['确定'],
-            }
-            if (mainWindow) {
-              dialog.showMessageBox(mainWindow, options)
-            } else {
-              dialog.showMessageBox(options)
-            }
-          },
+          click: showAbout,
         },
       ],
     },
