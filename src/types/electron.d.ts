@@ -66,6 +66,7 @@ export interface ElectronAPI {
   organize: (req: OrganizeRequest) => Promise<OrganizeResult>
   openFolder: (p: string) => Promise<void>
   readPdf: (filePath: string) => Promise<Uint8Array>
+  setThemeMode: (mode: 'light' | 'dark' | 'system') => Promise<void>
   minimize: () => Promise<void>
   maximize: () => Promise<void>
   close: () => Promise<void>

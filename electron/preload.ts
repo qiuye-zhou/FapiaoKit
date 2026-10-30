@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 读取 PDF 字节流（预览用）
   readPdf: (filePath: string): Promise<Uint8Array> =>
     ipcRenderer.invoke('invoice:readPdf', filePath),
+  // 同步主题到原生窗口（标题栏、菜单栏）
+  setThemeMode: (mode: 'light' | 'dark' | 'system'): Promise<void> =>
+    ipcRenderer.invoke('theme:setMode', mode),
 
   // 窗口控制
   minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),

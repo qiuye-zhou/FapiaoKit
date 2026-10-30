@@ -32,7 +32,7 @@ const goBack = () => {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--bg-page);
 
   .not-found-content {
     text-align: center;
@@ -41,25 +41,35 @@ const goBack = () => {
     .error-code {
       font-size: 72px;
       font-weight: 700;
-      color: #409eff;
+      color: var(--primary);
       margin-bottom: 20px;
     }
 
     .error-title {
       font-size: 24px;
-      color: #303133;
+      color: var(--text-1);
       margin-bottom: 15px;
     }
 
     .error-description {
       font-size: 16px;
-      color: #606266;
+      color: var(--text-2);
       margin-bottom: 30px;
     }
 
     .error-actions {
       button {
         margin: 0 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-1);
+        border-radius: 6px;
+        padding: 8px 18px;
+      }
+
+      button:hover {
+        border-color: var(--primary);
+        color: var(--primary);
       }
     }
   }

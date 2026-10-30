@@ -6,6 +6,7 @@ import {
   ipcMain,
   dialog,
   protocol,
+  nativeTheme,
   MenuItemConstructorOptions,
 } from 'electron'
 import * as path from 'path'
@@ -48,6 +49,8 @@ function createWindow(): void {
     icon: path.join(__dirname, '../static/logo.png'), // 应用图标
     show: false, // 先不显示，等加载完成后再显示
     titleBarStyle: 'default',
+    // 与页面背景一致，避免启动白闪（主题变化时由 theme:setMode 更新）
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#14171d' : '#f3f5fa',
   })
 
   // 加载应用
@@ -343,6 +346,14 @@ app.on('web-contents-created', (event, contents) => {
     shell.openExternal(url)
     return { action: 'deny' }
   })
+})
+
+// 主题同步：渲染进程切换 亮/暗/跟随系统 时，同步原生窗口（标题栏、菜单栏）配色
+ipcMain.handle('theme:setMode', (_event, mode: 'light' | 'dark' | 'system') => {
+  nativeTheme.themeSource = mode
+  const dark =
+    mode === 'dark' || (mode === 'system' && nativeTheme.shouldUseDarkColors)
+  mainWindow?.setBackgroundColor(dark ? '#14171d' : '#f3f5fa')
 })
 
 // ================= FapiaoKit 发票整理 IPC =================

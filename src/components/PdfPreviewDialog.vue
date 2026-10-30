@@ -248,10 +248,11 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
   height: 88vh;
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border: 1px solid #c9d4e5;
+  background: var(--bg-card);
+  color: var(--text-1);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(30, 50, 90, 0.3);
+  box-shadow: var(--shadow-pop);
   overflow: hidden;
 }
 
@@ -260,7 +261,7 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: #3b55d9;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #fff;
   cursor: move;
   user-select: none;
@@ -290,7 +291,7 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
 }
 .file-tabs button.active {
   background: #fff;
-  color: #3b55d9;
+  color: var(--primary-deep);
 }
 .close-btn {
   border: none;
@@ -306,15 +307,20 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-bottom: 1px solid #e3e9f2;
+  border-bottom: 1px solid var(--border-soft);
   font-size: 12px;
 }
 .toolbar button {
-  border: 1px solid #c9d4e5;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-1);
   border-radius: 5px;
   padding: 3px 8px;
   cursor: pointer;
+}
+.toolbar button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .toolbar button:disabled {
   opacity: 0.4;
@@ -327,13 +333,13 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
 .sep {
   flex: 0 0 1px;
   height: 16px;
-  background: #d8e0ec;
+  background: var(--border);
   margin: 0 4px;
 }
 .no-text {
   margin-left: auto;
-  color: #b26a00;
-  background: #fff4e0;
+  color: var(--warn-text);
+  background: var(--warn-soft-bg);
   border-radius: 4px;
   padding: 2px 8px;
 }
@@ -341,15 +347,16 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
 .body {
   flex: 1;
   overflow: auto;
-  background: #f0f2f7;
+  background: var(--bg-subtle);
   padding: 12px;
 }
 .page-wrap {
   position: relative;
   margin: 0 auto;
   width: fit-content;
+  /* PDF 页本身是票据图像，任何主题下都保持白底 */
   background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 .page-wrap canvas {
   display: block;
@@ -374,24 +381,24 @@ onBeforeUnmount(() => document.removeEventListener('click', hideMenu))
   color: transparent;
 }
 .text-layer ::selection {
-  background: rgba(59, 85, 217, 0.3);
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
   color: transparent;
 }
 
 .hint {
   text-align: center;
-  color: #8492a6;
+  color: var(--text-3);
   padding: 40px 0;
 }
 .hint.error {
-  color: #c62828;
+  color: var(--error);
 }
 
 footer {
   padding: 6px 12px;
   font-size: 12px;
-  color: #8492a6;
-  border-top: 1px solid #e3e9f2;
+  color: var(--text-3);
+  border-top: 1px solid var(--border-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -400,22 +407,22 @@ footer {
 .fill-menu {
   position: fixed;
   z-index: 1100;
-  background: #fff;
-  border: 1px solid #c9d4e5;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(30, 50, 90, 0.25);
+  box-shadow: var(--shadow-pop);
   padding: 6px;
   min-width: 180px;
 }
 .menu-tip {
   font-size: 12px;
-  color: #8492a6;
+  color: var(--text-3);
   padding: 4px 8px;
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid var(--border-softer);
   margin-bottom: 4px;
 }
 .fill-menu button {
@@ -424,13 +431,14 @@ footer {
   text-align: left;
   border: none;
   background: transparent;
+  color: var(--text-1);
   padding: 7px 10px;
   border-radius: 5px;
   font-size: 13px;
   cursor: pointer;
 }
 .fill-menu button:hover {
-  background: #eef2ff;
-  color: #3b55d9;
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
 }
 </style>

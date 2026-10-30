@@ -1,7 +1,29 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { InvoiceRecord, OrganizeResult } from '@/types/electron'
 import PdfPreviewDialog from '@/components/PdfPreviewDialog.vue'
+import { useTheme, type ThemeMode } from '@/composables/useTheme'
+
+const { mode: themeMode, setMode: setThemeMode } = useTheme()
+const THEME_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+  { value: 'system', label: '跟随系统' },
+]
+
+// 主题菜单：默认收起仅显示当前状态图标，点击展开
+const themeMenuOpen = ref(false)
+
+function pickTheme(m: ThemeMode): void {
+  setThemeMode(m)
+  themeMenuOpen.value = false
+}
+
+const closeThemeMenu = (): void => {
+  themeMenuOpen.value = false
+}
+onMounted(() => document.addEventListener('click', closeThemeMenu))
+onBeforeUnmount(() => document.removeEventListener('click', closeThemeMenu))
 
 interface RowVM extends InvoiceRecord {
   dateStr: string
@@ -324,6 +346,117 @@ function reset(): void {
       <p>选择出差文件夹 → 核对发票 → 一键重命名并生成报销单</p>
     </header>
 
+    <!-- 主题切换：固定右上角，默认仅显示当前状态图标，点击展开 -->
+    <div class="theme-fab" @click.stop>
+      <button
+        class="theme-toggle-btn"
+        :title="`主题：${THEME_OPTIONS.find((o) => o.value === themeMode)?.label}`"
+        aria-label="切换主题"
+        :aria-expanded="themeMenuOpen"
+        @click="themeMenuOpen = !themeMenuOpen"
+      >
+        <svg
+          v-if="themeMode === 'light'"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.3 11.3 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+          />
+        </svg>
+        <svg
+          v-else-if="themeMode === 'dark'"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+        </svg>
+        <svg
+          v-else
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="2" y="4" width="20" height="13" rx="2" />
+          <path d="M8 21h8m-4-4v4" />
+        </svg>
+      </button>
+
+      <transition name="theme-menu">
+        <div v-if="themeMenuOpen" class="theme-menu" role="menu">
+          <button
+            v-for="opt in THEME_OPTIONS"
+            :key="opt.value"
+            :class="{ active: themeMode === opt.value }"
+            role="menuitemradio"
+            :aria-checked="themeMode === opt.value"
+            @click="pickTheme(opt.value)"
+          >
+            <svg
+              v-if="opt.value === 'light'"
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.3 11.3 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+              />
+            </svg>
+            <svg
+              v-else-if="opt.value === 'dark'"
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+            <svg
+              v-else
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="13" rx="2" />
+              <path d="M8 21h8m-4-4v4" />
+            </svg>
+            {{ opt.label }}
+          </button>
+        </div>
+      </transition>
+    </div>
+
     <!-- 步骤 1：选择文件夹 -->
     <section class="card">
       <div class="step-title"><span class="step-no">1</span>选择出差文件夹</div>
@@ -605,31 +738,124 @@ function reset(): void {
 
 <style scoped>
 .page {
+  position: relative;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 24px 16px 60px;
-  font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-  color: #2c3e50;
+  padding: 28px 16px 60px;
+  color: var(--text-1);
 }
+
+/* ============ 页头与主题切换 ============ */
 .page-header {
+  position: relative;
   text-align: center;
   margin-bottom: 24px;
 }
 .page-header h1 {
   margin: 0 0 6px;
   font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-grad-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .page-header p {
   margin: 0;
-  color: #8492a6;
+  color: var(--text-3);
   font-size: 14px;
 }
-.card {
-  background: #fff;
+/* 主题切换：固定右上角悬浮按钮，点击展开菜单 */
+.theme-fab {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 900;
+}
+.theme-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.theme-toggle-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+}
+.theme-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 128px;
+  padding: 4px;
   border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-pop);
+}
+.theme-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.theme-menu button:hover {
+  background: var(--bg-hover);
+}
+.theme-menu button.active {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+/* 展开/收起动画 */
+.theme-menu-enter-active,
+.theme-menu-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  transform-origin: top right;
+}
+.theme-menu-enter-from,
+.theme-menu-leave-to {
+  opacity: 0;
+  transform: scale(0.92) translateY(-4px);
+}
+
+/* ============ 卡片 ============ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-softer);
+  border-radius: 12px;
   padding: 18px 20px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.2s ease;
+}
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
 }
 .step-title {
   font-size: 16px;
@@ -638,64 +864,58 @@ function reset(): void {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .step-no {
   display: inline-flex;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #4f6ef7;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #fff;
   font-size: 13px;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .step-tip {
   font-size: 12px;
   font-weight: 400;
-  color: #8492a6;
+  color: var(--text-3);
 }
 .total-badge {
   margin-left: auto;
   padding: 4px 12px;
   border-radius: 14px;
-  background: #eef2ff;
-  color: #3b55d9;
+  background: var(--primary-soft);
+  color: var(--primary-soft-text);
   font-size: 14px;
   font-weight: 700;
 }
-.folder-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.folder-path {
-  color: #5a6c7d;
-  font-size: 13px;
-  word-break: break-all;
-}
+
+/* ============ 按钮 ============ */
 .btn {
-  border: 1px solid #d0d7e2;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
   border-radius: 6px;
   padding: 8px 18px;
   font-size: 14px;
   cursor: pointer;
-  color: #2c3e50;
+  color: var(--text-1);
 }
 .btn:hover:not(:disabled) {
-  border-color: #4f6ef7;
-  color: #4f6ef7;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .btn-primary {
-  background: #4f6ef7;
-  border-color: #4f6ef7;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-color: transparent;
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #3d5bef;
   color: #fff;
+  filter: brightness(1.08);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 .btn-lg {
   padding: 12px 48px;
@@ -705,16 +925,30 @@ function reset(): void {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============ 文件夹选择 ============ */
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.folder-path {
+  color: var(--text-2);
+  font-size: 13px;
+  word-break: break-all;
+}
 .hint {
   margin-top: 10px;
-  color: #8492a6;
+  color: var(--text-3);
   font-size: 13px;
 }
 .hint-inline {
-  color: #8492a6;
+  color: var(--text-3);
   font-size: 12px;
 }
 
+/* ============ 发票表格 ============ */
 .invoice-table {
   width: 100%;
   border-collapse: collapse;
@@ -723,80 +957,94 @@ function reset(): void {
 .invoice-table th {
   text-align: left;
   padding: 8px 6px;
-  border-bottom: 2px solid #e4e9f2;
-  color: #8492a6;
+  border-bottom: 2px solid var(--border-soft);
+  color: var(--text-3);
   font-weight: 500;
   white-space: nowrap;
 }
 .invoice-table td {
   padding: 6px;
-  border-bottom: 1px solid #eef1f6;
+  border-bottom: 1px solid var(--border-softer);
   vertical-align: middle;
 }
-.invoice-table tr.confirm {
-  background: #fffbe8;
+.invoice-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.invoice-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+.invoice-table tr.confirm,
+.invoice-table tr.confirm:hover {
+  background: var(--warn-bg);
 }
 .seq {
   font-weight: 600;
-  color: #4f6ef7;
+  color: var(--primary);
 }
 .files {
   font-size: 12px;
-  color: #5a6c7d;
+  color: var(--text-2);
   word-break: break-all;
 }
 .note {
-  color: #c2841a;
+  color: var(--warn-text);
   font-size: 11px;
   margin-top: 2px;
 }
+
+/* 类型标签（颜色变量见 style.css，暗色自动切换） */
 .tag {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 12px;
-  background: #eef1f6;
+  background: var(--tag-bg);
+  color: var(--tag-text);
 }
 .tag.railway {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--tag-railway-bg);
+  color: var(--tag-railway-text);
 }
 .tag.flight {
-  background: #f3e5f5;
-  color: #6a1b9a;
+  background: var(--tag-flight-bg);
+  color: var(--tag-flight-text);
 }
 .tag.hotel {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--tag-hotel-bg);
+  color: var(--tag-hotel-text);
 }
 .tag.taxi {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--tag-taxi-bg);
+  color: var(--tag-taxi-text);
 }
 .tag.toll {
-  background: #e0f7fa;
-  color: #00695c;
+  background: var(--tag-toll-bg);
+  color: var(--tag-toll-text);
 }
 .tag.express {
-  background: #fce4ec;
-  color: #ad1457;
+  background: var(--tag-express-bg);
+  color: var(--tag-express-text);
 }
 .tag.other {
-  background: #eceff1;
-  color: #546e7a;
+  background: var(--tag-bg);
+  color: var(--tag-text);
 }
 
+/* ============ 表格内输入框 ============ */
 .cell-input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d0d7e2;
+  border: 1px solid var(--border);
   border-radius: 5px;
   padding: 6px 8px;
   font-size: 13px;
+  background: var(--bg-card);
+  color: var(--text-1);
 }
 .cell-input:focus {
   outline: none;
-  border-color: #4f6ef7;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .cell-input.center {
   text-align: center;
@@ -807,6 +1055,7 @@ function reset(): void {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .custom-actions {
   margin-top: 12px;
@@ -819,14 +1068,26 @@ function reset(): void {
   width: 90px;
   text-align: center;
 }
-.move button {
-  border: 1px solid #d0d7e2;
-  background: #fff;
+
+/* 排序与预览小按钮 */
+.move button,
+.preview-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-1);
   border-radius: 4px;
+  cursor: pointer;
+}
+.move button {
   width: 26px;
   height: 24px;
-  cursor: pointer;
   margin-right: 4px;
+}
+.move button:hover:not(:disabled),
+.preview-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .move button:disabled {
   opacity: 0.3;
@@ -836,17 +1097,10 @@ function reset(): void {
   text-align: center;
 }
 .preview-btn {
-  border: 1px solid #d0d7e2;
-  background: #fff;
-  border-radius: 4px;
   padding: 2px 7px;
-  cursor: pointer;
-}
-.preview-btn:hover {
-  background: #eef2ff;
-  border-color: #3b55d9;
 }
 
+/* ============ 报销信息表单 ============ */
 .form-grid {
   display: grid;
   grid-template-columns: 110px 1fr;
@@ -855,7 +1109,7 @@ function reset(): void {
   font-size: 14px;
 }
 .form-grid label {
-  color: #5a6c7d;
+  color: var(--text-2);
   text-align: right;
 }
 .inline {
@@ -867,8 +1121,9 @@ function reset(): void {
   width: 150px;
 }
 .chip {
-  border: 1px solid #d0d7e2;
-  background: #f6f8fc;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-2);
   border-radius: 12px;
   padding: 4px 12px;
   font-size: 12px;
@@ -876,29 +1131,36 @@ function reset(): void {
   white-space: nowrap;
 }
 .chip:hover {
-  border-color: #4f6ef7;
-  color: #4f6ef7;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
+/* ============ 执行 / 警告 / 结果 ============ */
 .action-card {
   text-align: center;
 }
 .error {
   margin-top: 12px;
-  color: #d32f2f;
+  color: var(--error);
   font-size: 13px;
 }
 .warn-card {
-  background: #fffbe8;
+  background: var(--warn-bg);
+  border-color: color-mix(in srgb, var(--warn-text) 25%, transparent);
 }
 .warn {
-  color: #c2841a;
+  color: var(--warn-text);
   font-size: 13px;
   padding: 2px 0;
 }
 .result-card {
-  border: 1px solid #a5d6a7;
-  background: #f6fbf6;
+  border: 1px solid var(--success-border);
+  background: var(--success-bg);
+}
+.result-card summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 13px;
 }
 .result-line {
   font-size: 14px;
@@ -906,14 +1168,25 @@ function reset(): void {
 }
 .rename-line {
   font-size: 12px;
-  color: #5a6c7d;
+  color: var(--text-2);
   padding: 2px 0;
 }
 .rename-line .to {
-  color: #2e7d32;
+  color: var(--success-text);
 }
 .result-total {
-  color: #3b55d9;
+  color: var(--primary-soft-text);
   font-size: 16px;
+}
+
+/* 窄屏适配 */
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .form-grid label {
+    text-align: left;
+  }
 }
 </style>
