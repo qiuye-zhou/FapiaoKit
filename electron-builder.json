@@ -1,6 +1,6 @@
 {
   "appId": "com.electron.app",
-  "productName": "FapiaoKit",
+  "productName": "发票报销整理工具",
   "copyright": "Copyright © 2026 FapiaoKit",
   "npmRebuild": false,
   "directories": {

@@ -342,7 +342,7 @@ function reset(): void {
 <template>
   <div class="page">
     <header class="page-header">
-      <h1>FapiaoKit 差旅报销整理</h1>
+      <h1>发票报销整理工具</h1>
       <p>选择出差文件夹 → 核对发票 → 一键重命名并生成报销单</p>
     </header>
 
